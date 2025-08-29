@@ -7,6 +7,8 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
+use App\Models\Quote;
 
 class QuotesRelationManager extends RelationManager
 {
@@ -39,8 +41,18 @@ class QuotesRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Action::make("downloadPDF")
+                    ->url(function( Quote $quote ){
+                        return route("quote.generate.pdf", ["quote" => $quote]);
+                    })
+                    ->openUrlInNewTab()
+                    ->label("PDF"),
+                Action::make("generateHTML")
+                    ->url(function( Quote $quote ){
+                        return route("quote.generate.html", ["quote" => $quote]);
+                    })
+                    ->openUrlInNewTab()
+                    ->label("Online"),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

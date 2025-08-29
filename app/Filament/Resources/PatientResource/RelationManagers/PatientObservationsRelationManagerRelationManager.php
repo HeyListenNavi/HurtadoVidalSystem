@@ -8,6 +8,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\AttachAction;
+use Filament\Tables\Actions\Action;
 
 class PatientObservationsRelationManager extends RelationManager
 {
@@ -26,7 +27,8 @@ class PatientObservationsRelationManager extends RelationManager
                     ->schema([
                         Forms\Components\DatePicker::make('observation_date')
                             ->label('Fecha de la Observación')
-                            ->required(),
+                            ->required()
+                            ->default(now()),
                         Forms\Components\RichEditor::make('notes')
                             ->label('Notas de la Visita')
                             ->required()
@@ -44,6 +46,7 @@ class PatientObservationsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->recordTitleAttribute('notes')
             ->columns([
                 Tables\Columns\TextColumn::make('observation_date')
