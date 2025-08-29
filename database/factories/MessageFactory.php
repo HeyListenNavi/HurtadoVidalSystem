@@ -2,28 +2,33 @@
 
 namespace Database\Factories;
 
-use App\Models\Patient;
+use App\Models\Message;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class PatientFactory extends Factory
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<Message>
+ */
+class MessageFactory extends Factory
 {
-    protected $model = Patient::class;
-
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
+        // Se define el array de datos para crear una instancia de Message
         return [
-            'first_name' => $this->faker->firstName,
-            'last_name' => $this->faker->lastName,
-            'birth_date' => $this->faker->date(),
-            'gender' => $this->faker->randomElement(['Masculino', 'Femenino', 'Otro']),
-            'phone' => $this->faker->phoneNumber,
-            'email' => $this->faker->safeEmail,
-            'address' => $this->faker->address,
-            'emergency_contact_name' => $this->faker->name,
-            'emergency_contact_phone' => $this->faker->phoneNumber,
-            'blood_type' => $this->faker->randomElement(['O+', 'A-', 'B+', 'AB-', null]),
-            'allergies' => $this->faker->optional()->sentence,
-            'medical_history' => $this->faker->optional()->paragraph,
+            // Se usa un UUID para simular un conversation_id único
+            'conversation_id' => $this->faker->uuid(),
+            // Se usa un número de teléfono aleatorio, puede ser nulo
+            'phone' => $this->faker->phoneNumber(),
+            // Se usa un nombre aleatorio, puede ser nulo
+            'name' => $this->faker->name(),
+            // Se genera una oración de texto para el mensaje
+            'message' => $this->faker->sentence(),
+            // Se elige aleatoriamente entre 'user' y 'bot' para el rol
+            'role' => $this->faker->randomElement(['user', 'bot']),
         ];
     }
 }

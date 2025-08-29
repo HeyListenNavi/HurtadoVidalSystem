@@ -14,7 +14,7 @@ class MessageSeeder extends Seeder
         $conversations = Conversation::all();
         foreach ($conversations as $conversation) {
             Message::factory(5)->create([
-                'chat_id' => $conversation->chat_id,
+                'conversation_id' => $conversation->id,
             ]);
         }
     }
