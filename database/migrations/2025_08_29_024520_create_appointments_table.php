@@ -20,8 +20,8 @@ return new class extends Migration
             $table->time('appointment_time')->nullable();
             $table->text('reason_for_visit')->nullable();
             $table->foreignId('current_question_id')->nullable()->constrained('appointment_questions')->onDelete('set null');
-            $table->string('process_status')->default('in_progress'); // in_progress, completed, rejected, cancelled
-            $table->string('current_step')->after('process_status')->nullable();
+            $table->enum('process_status', ['in_progress', 'completed', 'rejected', 'cancelled'])->default('in_progress');
+            $table->string('current_step')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->boolean('is_confirmed')->default(false);
             $table->timestamps();

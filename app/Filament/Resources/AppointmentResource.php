@@ -40,9 +40,6 @@ class AppointmentResource extends Resource
                 Forms\Components\Textarea::make('reason_for_visit')
                     ->label('Motivo de la Visita')
                     ->columnSpanFull(),
-                Forms\Components\Select::make('current_stage_id')
-                    ->relationship('currentStage', 'name')
-                    ->label('Etapa Actual'),
                 Forms\Components\Select::make('current_question_id')
                     ->relationship('currentQuestion', 'question_text')
                     ->label('Pregunta Actual'),
@@ -53,9 +50,6 @@ class AppointmentResource extends Resource
                 Forms\Components\Textarea::make('rejection_reason')
                     ->label('Razón de Rechazo')
                     ->columnSpanFull(),
-                Forms\Components\Toggle::make('is_confirmed')
-                    ->label('Confirmada')
-                    ->required(),
             ]);
     }
 
