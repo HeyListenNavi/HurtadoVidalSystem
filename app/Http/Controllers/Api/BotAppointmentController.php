@@ -54,13 +54,12 @@ class BotAppointmentController extends Controller
             'process_status' => 'in_progress',
         ]);
 
-        // Busca o crea la conversación y la asocia a la cita.
         $conversation = Conversation::firstOrCreate(
             ['chat_id' => $chatId],
             [
                 'user_name' => $userName,
-                'current_process_id' => $appointment->id,
-                'current_process_type' => Appointment::class
+                'processable_id' => $appointment->id,
+                'processable_type' => Appointment::class
             ]
         );
 

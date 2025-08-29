@@ -14,24 +14,18 @@ class Conversation extends Model
     protected $fillable = [
         'chat_id',
         'user_name',
-        'current_process',
-        'process_id',
-        'process_status',
+        'processable_id',    // agregado
+        'processable_type',  // agregado
+        'process_status',    // si lo usas
     ];
 
-    /**
-     * Relación con los mensajes de la conversación.
-     */
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class, 'chat_id', 'chat_id');
     }
 
-    /**
-     * Relación polimórfica al proceso activo.
-     */
     public function processable(): MorphTo
     {
-        return $this->morphTo('processable', 'current_process', 'process_id');
+        return $this->morphTo();
     }
 }

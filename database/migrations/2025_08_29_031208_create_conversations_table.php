@@ -15,10 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('chat_id')->unique();
             $table->string('user_name')->nullable();
-            $table->string('current_process')->nullable();
-            $table->unsignedBigInteger('process_id')->nullable();
+
+            // Campos polimórficos con convención estándar
+            $table->unsignedBigInteger('processable_id')->nullable();
+            $table->string('processable_type')->nullable();
+
             $table->string('process_status')->default('in_progress');
             $table->timestamps();
+
+            // Índice combinado para consultas rápidas
+            $table->index(['processable_id', 'processable_type']);
         });
     }
 
