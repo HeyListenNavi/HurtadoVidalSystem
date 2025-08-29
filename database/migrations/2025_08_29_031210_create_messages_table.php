@@ -13,14 +13,12 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
-            $table->string('chat_id'); // Usamos chat_id en lugar de conversation_id para la consistencia
+            $table->string('conversation_id'); 
             $table->string('phone')->nullable();
             $table->string('name')->nullable();
             $table->text('message');
             $table->string('role'); // user, bot
             $table->timestamps();
-
-            $table->foreign('chat_id')->references('chat_id')->on('conversations')->onDelete('cascade');
         });
     }
 
