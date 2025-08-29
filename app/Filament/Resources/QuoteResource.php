@@ -16,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\HtmlString;
+use Filament\Tables\Actions\Action;
 
 class QuoteResource extends Resource
 {
@@ -122,6 +123,18 @@ class QuoteResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Action::make("downloadPDF")
+                    ->url(function( Quote $quote ){
+                        return route("quote.generate.pdf", ["quote" => $quote]);
+                    })
+                    ->openUrlInNewTab()
+                    ->label("PDF"),
+                Action::make("generateHTML")
+                    ->url(function( Quote $quote ){
+                        return route("quote.generate.html", ["quote" => $quote]);
+                    })
+                    ->openUrlInNewTab()
+                    ->label("Online"),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
