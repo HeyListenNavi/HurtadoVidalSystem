@@ -15,11 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('chat_id')->unique();
             $table->string('patient_name')->nullable();
+            $table->string('phone')->nullable();
             $table->date('appointment_date')->nullable();
             $table->time('appointment_time')->nullable();
             $table->text('reason_for_visit')->nullable();
             $table->foreignId('current_question_id')->nullable()->constrained('appointment_questions')->onDelete('set null');
             $table->string('process_status')->default('in_progress'); // in_progress, completed, rejected, cancelled
+            $table->string('current_step')->after('process_status')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->boolean('is_confirmed')->default(false);
             $table->timestamps();

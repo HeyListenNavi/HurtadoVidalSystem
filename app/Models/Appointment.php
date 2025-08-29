@@ -15,24 +15,14 @@ class Appointment extends Model
     protected $fillable = [
         'chat_id',
         'patient_name',
+        'phone',
         'appointment_date',
         'appointment_time',
-        'reason_for_visit',
-        'current_stage_id',
+        'current_step',
         'current_question_id',
         'process_status',
         'rejection_reason',
-        'is_confirmed',
     ];
-
-    protected $casts = [
-        'is_confirmed' => 'boolean',
-    ];
-
-    public function currentStage(): BelongsTo
-    {
-        return $this->belongsTo(AppointmentSetting::class, 'current_stage_id');
-    }
 
     public function currentQuestion(): BelongsTo
     {
