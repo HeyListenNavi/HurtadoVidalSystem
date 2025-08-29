@@ -2,22 +2,20 @@
 
 namespace Database\Factories;
 
+use App\Models\Quote;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Quote>
- */
 class QuoteFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
+    protected $model = Quote::class;
+
     public function definition(): array
     {
         return [
-            //
+            'patient_id' => null, // Set in seeder
+            'quote_number' => $this->faker->uuid,
+            'total_amount' => $this->faker->randomFloat(2, 100, 1000),
+            'status' => $this->faker->randomElement(['pending', 'approved', 'rejected']),
         ];
     }
 }
