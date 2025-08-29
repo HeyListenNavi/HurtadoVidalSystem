@@ -97,6 +97,7 @@ class QuoteResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('quote_number')
                     ->label('No. de Cotización')
