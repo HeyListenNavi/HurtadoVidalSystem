@@ -5,15 +5,15 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Patient;
-use App\Models\Quote;
+use App\Models\PatientObservation;
 
-class QuoteSeeder extends Seeder
+class PatientObservationSeeder extends Seeder
 {
     public function run(): void
     {
         $patients = Patient::all();
         foreach ($patients as $patient) {
-            Quote::factory(2)->create([
+            PatientObservation::factory(2)->create([
                 'patient_id' => $patient->id,
             ]);
         }
