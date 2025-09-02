@@ -3,40 +3,39 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Patient;
+use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
 
-class TotalPatientsChart extends ChartWidget
+class NewPatientsPerMonthWidget extends ChartWidget
 {
-    protected static ?int $sort = 2;
+    protected static ?string $heading = 'Pacientes Nuevos por Mes';
 
-    protected static ?string $heading = 'Total de Pacientes por Año';
+    protected static ?int $sort = 5;
 
     protected function getData(): array
     {
         $data = Trend::model(Patient::class)
             ->between(
                 start: now()->startOfYear(),
-                end: now()->endOfYear(),
+                end: now()->endOfYear()
             )
-            ->perYear()
+            ->perMonth()
             ->count();
 
         return [
+            'labels' => $data->map(fn(TrendValue $value) => Carbon::parse($value->date)->format('M')),
             'datasets' => [
                 [
-                    'label' => 'Total de pacientes',
+                    'label' => 'Nuevos Pacientes',
                     'data' => $data->map(fn(TrendValue $value) => $value->aggregate),
-                    'fill' => true,
                 ],
             ],
-            'labels' => $data->map(fn(TrendValue $value) => $value->date),
         ];
     }
-
     protected function getType(): string
     {
-        return 'line';
+        return 'bar';
     }
 }

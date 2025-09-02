@@ -19,26 +19,40 @@ class AppointmentQuestionResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-question-mark-circle';
 
-    protected static ?string $navigationGroup = 'Appointments';
+    protected static ?string $navigationGroup = 'Citas';
+
+    protected static ?string $modelLabel = 'Pregunta';
+
+    protected static ?string $pluralModelLabel = 'Preguntas';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Textarea::make('question_text')
-                    ->label('Texto de la Pregunta')
-                    ->required()
-                    ->columnSpanFull(),
-                Forms\Components\Textarea::make('approval_criteria')
-                    ->label('Criterios de Aprobación (JSON)')
-                    ->helperText('Ej: {"type": "text", "min_length": 5} o {"type": "options", "values": ["si", "no"]}')
-                    ->rows(5)
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('order')
-                    ->label('Orden')
-                    ->numeric()
-                    ->default(0)
-                    ->hiddenOn('edit'),
+                Forms\Components\Section::make('Pregunta')
+                    ->description('Define la pregunta y sus criterios de aprobación')
+                    ->icon('heroicon-o-question-mark-circle')
+                    ->schema([
+                        Forms\Components\Textarea::make('question_text')
+                            ->label('Texto de la Pregunta')
+                            ->placeholder('Ej: ¿El paciente ha tomado su medicamento hoy?')
+                            ->required()
+                            ->rows(3)
+                            ->columnSpanFull(),
+
+                        Forms\Components\Textarea::make('approval_criteria')
+                            ->label('Criterios de Aprobación (JSON)')
+                            ->helperText('Ej: {"type": "text", "min_length": 5} o {"type": "options", "values": ["si", "no"]}')
+                            ->rows(5)
+                            ->columnSpanFull(),
+
+                        Forms\Components\TextInput::make('order')
+                            ->label('Orden')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->hiddenOn('edit'),
+                    ]),
             ]);
     }
 
@@ -50,25 +64,25 @@ class AppointmentQuestionResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('question_text')
                     ->label('Pregunta')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('order')
-                    ->label('Orden')
-                    ->sortable(),
+                    ->searchable()
+                    ->limit(50)
+                    ->tooltip(fn($record) => $record->question_text),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creada')
-                    ->dateTime()
+                    ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizada')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

@@ -18,7 +18,9 @@ class PatientResource extends Resource
     protected static ?string $model = Patient::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?string $modelLabel = 'Paciente';
+    
     protected static ?string $pluralModelLabel = 'Pacientes';
 
     public static function form(Form $form): Form
@@ -26,6 +28,8 @@ class PatientResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Datos Personales')
+                    ->description('Información básica del paciente')
+                    ->icon('heroicon-o-user')
                     ->schema([
                         Forms\Components\TextInput::make('first_name')
                             ->label('Nombre(s)')
@@ -37,7 +41,8 @@ class PatientResource extends Resource
                             ->maxLength(255),
                         Forms\Components\DatePicker::make('birth_date')
                             ->label('Fecha de Nacimiento')
-                            ->required(),
+                            ->required()
+                            ->maxDate(now()), // no permite fechas futuras
                         Forms\Components\Select::make('gender')
                             ->label('Género')
                             ->options([
@@ -45,6 +50,7 @@ class PatientResource extends Resource
                                 'female' => 'Femenino',
                                 'other' => 'Otro',
                             ])
+                            ->native(false)
                             ->required(),
                         Forms\Components\TextInput::make('phone')
                             ->label('Teléfono')
@@ -58,21 +64,34 @@ class PatientResource extends Resource
                             ->label('Dirección')
                             ->maxLength(255),
                     ])->columns(2),
-                
+
                 Forms\Components\Section::make('Información Médica')
+                    ->icon('heroicon-o-heart')
                     ->schema([
-                        Forms\Components\TextInput::make('blood_type')
+                        Forms\Components\Select::make('blood_type')
                             ->label('Tipo de Sangre')
-                            ->maxLength(255),
+                            ->options([
+                                'A+' => 'A+',
+                                'A-' => 'A-',
+                                'B+' => 'B+',
+                                'B-' => 'B-',
+                                'AB+' => 'AB+',
+                                'AB-' => 'AB-',
+                                'O+' => 'O+',
+                                'O-' => 'O-',
+                            ]),
                         Forms\Components\Textarea::make('allergies')
                             ->label('Alergias')
+                            ->placeholder('Ej: Penicilina, polen, mariscos...')
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('medical_history')
                             ->label('Historial Médico')
+                            ->placeholder('Ej: Diabetes, hipertensión, cirugías previas...')
                             ->columnSpanFull(),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Contacto de Emergencia')
+                    ->icon('heroicon-o-phone')
                     ->schema([
                         Forms\Components\TextInput::make('emergency_contact_name')
                             ->label('Nombre del Contacto')
@@ -90,32 +109,36 @@ class PatientResource extends Resource
         return $table
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('first_name')
-                    ->label('Nombre')
+                Tables\Columns\TextColumn::make('full_name')
+                    ->label('Nombre Completo')
+                    ->formatStateUsing(fn($record) => $record->first_name . ' ' . $record->last_name)
                     ->searchable(),
-                Tables\Columns\TextColumn::make('last_name')
-                    ->label('Apellido')
-                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('birth_date')
                     ->label('Fecha de Nacimiento')
                     ->date()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
+                    ->icon('heroicon-o-phone')
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('email')
-                    ->label('Email')
+                    ->label('Correo Electrónico')
+                    ->icon('heroicon-o-envelope')
+                    ->copyable()
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -125,6 +148,7 @@ class PatientResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getRelations(): array
     {

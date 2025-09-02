@@ -2,7 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Appointment;
 use App\Models\Patient;
+use App\Models\Product;
+use App\Models\Quote;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -14,25 +17,31 @@ class PatientsOverview extends BaseWidget
     protected function getStats(): array
     {
         return [
-            Stat::make('Total de pacientes', Patient::count())
-                ->description('Número total en el sistema')
-                ->descriptionIcon('heroicon-m-user-group')
-                ->color('primary'),
+            Stat::make('Citas', Appointment::count())
+                ->description('Total de citas registradas')
+                ->descriptionIcon('heroicon-m-calendar-days'),
 
-            Stat::make('Pacientes con cotizaciones', Patient::has('quotes')->count())
-                ->description('Pacientes que tienen cotizaciones')
-                ->descriptionIcon('heroicon-m-document-text')
-                ->color(Color::Neutral),
+            Stat::make('Citas de Hoy', Appointment::whereDate('appointment_date', today())->count())
+                ->description('Citas agendadas para ' . now()->format('d/m/Y'))
+                ->descriptionIcon('heroicon-o-calendar-days'),
 
-            Stat::make('Pacientes con observaciones', Patient::has('observations')->count())
-                ->description('Pacientes con observaciones médicas')
-                ->descriptionIcon('heroicon-m-clipboard-document')
-                ->color(Color::Neutral),
+            Stat::make('Pacientes', Patient::count())
+                ->description('Pacientes en el sistema')
+                ->descriptionIcon('heroicon-m-user-group'),
 
-            Stat::make('Pacientes con alergias', Patient::whereNotNull('allergies')->where('allergies', '!=', '')->count())
-                ->description('Pacientes que reportan alergias')
-                ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color(Color::Neutral),
+            Stat::make('Nuevos Pacientes', Patient::whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count())
+                ->description('Registrados en ' . now()->locale('es')->monthName)
+                ->descriptionIcon('heroicon-o-user-group'),
+
+            Stat::make('Cotizaciones', Quote::count())
+                ->description('Cotizaciones generadas')
+                ->descriptionIcon('heroicon-m-document-text'),
+
+            Stat::make('Productos', Product::count())
+                ->description('Productos disponibles')
+                ->descriptionIcon('heroicon-m-cube'),
         ];
     }
 }

@@ -21,7 +21,12 @@ use Filament\Tables\Actions\Action;
 class QuoteResource extends Resource
 {
     protected static ?string $model = Quote::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
+    protected static ?string $modelLabel = 'Cotización';
+
+    protected static ?string $pluralModelLabel = 'Cotizaciones';
 
     public static function form(Form $form): Form
     {
@@ -31,17 +36,16 @@ class QuoteResource extends Resource
                     ->label('Paciente')
                     ->options(Patient::all()->pluck('full_name', 'id'))
                     ->searchable()
+                    ->placeholder('Selecciona un paciente...')
                     ->required()
                     ->columnSpan('full'),
 
                 Section::make('Productos y Servicios')
                     ->schema([
-                        Repeater::make('products') // El nombre 'products' debe coincidir con la relación
-                            // ->relationship() // <--- ELIMINA ESTA LÍNEA
+                        Repeater::make('products')
                             ->label('Lista de Productos')
                             ->schema([
                                 Select::make('product_id')
-                                    // ... el resto de tu schema del repeater está perfecto
                                     ->label('Producto/Servicio')
                                     ->options(Product::all()->pluck('name', 'id'))
                                     ->searchable()
@@ -52,45 +56,62 @@ class QuoteResource extends Resource
                                         if ($product) {
                                             $set('price', $product->price);
                                         }
-                                    }),
+                                    })
+                                    ->columnSpan(2),
+
                                 TextInput::make('quantity')
                                     ->label('Cantidad')
                                     ->numeric()
+                                    ->default(1)
                                     ->required()
                                     ->live()
-                                    ->default(1),
+                                    ->columnSpan(1),
+
                                 TextInput::make('price')
                                     ->label('Precio Unitario')
                                     ->prefix('$')
                                     ->numeric()
                                     ->required()
-                                    ->live(),
+                                    ->live()
+                                    ->columnSpan(1),
+
                                 Placeholder::make('subtotal')
                                     ->label('Subtotal')
                                     ->content(function ($get) {
                                         $quantity = $get('quantity') ?? 0;
                                         $price = $get('price') ?? 0;
                                         return '$' . number_format($quantity * $price, 2);
-                                    }),
+                                    })
+                                    ->columnSpan(1),
                             ])
-                            ->columns(4)
+                            ->columns(5)
                             ->columnSpan('full')
                             ->addActionLabel('Agregar Producto')
                             ->reorderable()
-                            ->orderColumn('order') // Esto requiere la lógica manual para guardar el orden
-                            ->itemLabel(fn (array $state): ?string => $state['product_id'] ? Product::find($state['product_id'])?->name : null),
+                            ->itemLabel(
+                                fn(array $state): ?string =>
+                                $state['product_id'] ? Product::find($state['product_id'])?->name : null
+                            ),
                     ])
                     ->collapsible(),
 
-                Placeholder::make('total_placeholder')
-                    ->label('Total de la Cotización')
-                    ->content(function ($get) {
-                        $total = 0;
-                        foreach ($get('products') as $item) {
-                            $total += ($item['quantity'] ?? 0) * ($item['price'] ?? 0);
-                        }
-                        return new HtmlString('<h2 style="font-weight: bold;">Total: $' . number_format($total, 2) . '</h2>');
-                    }),
+                Section::make('Resumen')
+                    ->schema([
+                        Placeholder::make('total_placeholder')
+                            ->label('Total de la Cotización')
+                            ->content(function ($get) {
+                                $total = 0;
+                                foreach ($get('products') as $item) {
+                                    $total += ($item['quantity'] ?? 0) * ($item['price'] ?? 0);
+                                }
+                                return new HtmlString(
+                                    '<span style="font-size:1.2rem; font-weight:bold; color:#16a34a;">$' .
+                                        number_format($total, 2) .
+                                        '</span>'
+                                );
+                            }),
+                    ])
+                    ->collapsed(false),
             ]);
     }
 
@@ -101,41 +122,55 @@ class QuoteResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('quote_number')
                     ->label('No. de Cotización')
+                    ->copyable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('patient.first_name')
+
+                Tables\Columns\TextColumn::make('patient.full_name')
                     ->label('Paciente')
                     ->searchable(),
+
                 Tables\Columns\TextColumn::make('total_amount')
                     ->label('Monto Total')
                     ->money('usd', true)
+                    ->color(fn($state) => $state > 0 ? 'success' : 'gray')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->label('Estado')
                     ->badge()
+                    ->color(fn($state) => match ($state) {
+                        'pendiente' => 'warning',
+                        'pagado' => 'success',
+                        'cancelado' => 'danger',
+                        default => 'gray',
+                    })
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Fecha')
                     ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->sortable(),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Action::make("downloadPDF")
-                    ->url(function( Quote $quote ){
-                        return route("quote.generate.pdf", ["quote" => $quote]);
-                    })
-                    ->openUrlInNewTab()
-                    ->label("PDF"),
-                Action::make("generateHTML")
-                    ->url(function( Quote $quote ){
-                        return route("quote.generate.html", ["quote" => $quote]);
-                    })
-                    ->openUrlInNewTab()
-                    ->label("Online"),
+                Tables\Actions\ActionGroup::make([
+                    Action::make("downloadPDF")
+                        ->url(
+                            fn(Quote $quote) =>
+                            route("quote.generate.pdf", ["quote" => $quote])
+                        )
+                        ->openUrlInNewTab()
+                        ->label("PDF"),
+
+                    Action::make("generateHTML")
+                        ->url(
+                            fn(Quote $quote) =>
+                            route("quote.generate.html", ["quote" => $quote])
+                        )
+                        ->openUrlInNewTab()
+                        ->label("Online"),
+                ])->label('Más'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -143,6 +178,7 @@ class QuoteResource extends Resource
                 ]),
             ]);
     }
+
 
     public static function getRelations(): array
     {

@@ -19,19 +19,32 @@ class AppointmentSettingResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-cog';
 
-    protected static ?string $navigationGroup = 'Appointments';
+    protected static ?string $navigationGroup = 'Citas';
+
+    protected static ?string $modelLabel = 'Configuración';
+
+    protected static ?string $pluralModelLabel = 'Configuraciones';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->label('Nombre de la Configuración')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\Textarea::make('rejection_reason')
-                    ->label('Razón de Rechazo por Defecto')
-                    ->columnSpanFull(),
+                Forms\Components\Section::make('Configuración General')
+                    ->description('Define las configuraciones principales del sistema.')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nombre de la Configuración')
+                            ->required()
+                            ->unique(ignoreRecord: true)
+                            ->maxLength(255),
+
+                        Forms\Components\Textarea::make('rejection_reason')
+                            ->label('Razón de Rechazo por Defecto')
+                            ->placeholder('Ej: El documento enviado no cumple con los requisitos...')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible(),
             ]);
     }
 
@@ -42,22 +55,24 @@ class AppointmentSettingResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->description(fn($record) => \Illuminate\Support\Str::limit($record->rejection_reason, 50)),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
-                    ->dateTime()
+                    ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -69,6 +84,7 @@ class AppointmentSettingResource extends Resource
                 Tables\Actions\CreateAction::make(),
             ]);
     }
+
 
     public static function getRelations(): array
     {

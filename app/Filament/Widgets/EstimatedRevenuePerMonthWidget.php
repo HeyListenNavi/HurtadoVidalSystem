@@ -2,36 +2,36 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Patient;
+use App\Models\Quote;
+use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
 use Flowframe\Trend\Trend;
 use Flowframe\Trend\TrendValue;
 
-class MonthlyPatientsChart extends ChartWidget
+class EstimatedRevenuePerMonthWidget extends ChartWidget
 {
+    protected static ?string $heading = 'Ingresos Estimados por Mes';
+
     protected static ?int $sort = 3;
 
-    protected static ?string $heading = 'Pacientes por Mes';
-
     protected function getData(): array
-    {   
-        $data = Trend::model(Patient::class)
+    {
+        $data = Trend::query(Quote::query()->where('status', 'approved'))
             ->between(
                 start: now()->startOfYear(),
-                end: now()->endOfYear(),
+                end: now()->endOfYear()
             )
             ->perMonth()
-            ->count();
+            ->sum('total_amount');
 
         return [
+            'labels' => $data->map(fn(TrendValue $value) => Carbon::parse($value->date)->format('M')),
             'datasets' => [
                 [
-                    'label' => 'Total de Pacientes',
+                    'label' => 'Ingresos',
                     'data' => $data->map(fn(TrendValue $value) => $value->aggregate),
-                    'fill' => true,
                 ],
             ],
-            'labels' => $data->map(fn(TrendValue $value) => $value->date),
         ];
     }
 

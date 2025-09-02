@@ -2,7 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\AppointmentsByStatusWidget;
+use App\Filament\Widgets\AppointmentsPerDayWidget;
+use App\Filament\Widgets\EstimatedRevenuePerMonthWidget;
 use App\Filament\Widgets\MonthlyPatientsChart;
+use App\Filament\Widgets\NewPatientsPerMonthWidget;
 use App\Filament\Widgets\PatientsList;
 use App\Filament\Widgets\PatientsOverview;
 use App\Filament\Widgets\TotalPatientsChart;
@@ -42,8 +46,10 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 PatientsOverview::class,
-                MonthlyPatientsChart::class,
-                TotalPatientsChart::class,
+                AppointmentsPerDayWidget::class,
+                AppointmentsByStatusWidget::class,
+                NewPatientsPerMonthWidget::class,
+                EstimatedRevenuePerMonthWidget::class,
                 PatientsList::class,
             ])
             ->middleware([
