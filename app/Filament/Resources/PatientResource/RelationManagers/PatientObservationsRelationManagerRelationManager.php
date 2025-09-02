@@ -15,7 +15,7 @@ class PatientObservationsRelationManager extends RelationManager
     protected static string $relationship = 'observations';
 
     protected static ?string $recordTitleAttribute = 'notes';
-    
+
     protected static ?string $modelLabel = 'Observación';
     protected static ?string $pluralModelLabel = 'Observaciones';
 
@@ -24,21 +24,26 @@ class PatientObservationsRelationManager extends RelationManager
         return $form
             ->schema([
                 Forms\Components\Section::make('Detalles de la Observación')
+                    ->description('Observaciones privadas del paciente. Solo personal autorizado puede verlas.')
                     ->schema([
                         Forms\Components\DatePicker::make('observation_date')
                             ->label('Fecha de la Observación')
                             ->required()
-                            ->default(now()),
+                            ->default(now())
+                            ->maxDate(now()),
+
                         Forms\Components\RichEditor::make('notes')
                             ->label('Notas de la Visita')
                             ->required()
                             ->columnSpanFull(),
+
                         Forms\Components\FileUpload::make('attached_photo')
                             ->label('Foto Adjunta')
                             ->image()
                             ->directory('patient-photos')
-                            ->visibility('private') // Asegura que las fotos no sean accesibles públicamente
-                            ->columnSpanFull(),
+                            ->visibility('private')
+                            ->columnSpanFull()
+                            ->imagePreviewHeight(150),
                     ])->columns(1),
             ]);
     }
@@ -51,21 +56,25 @@ class PatientObservationsRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('observation_date')
                     ->label('Fecha')
-                    ->date(),
+                    ->since(),
+
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Notas')
                     ->html()
-                    ->limit(50),
+                    ->limit(50)
+                    ->tooltip(fn($record) => $record->notes),
+
                 Tables\Columns\ImageColumn::make('attached_photo')
-                    ->label('Foto'),
+                    ->label('Foto')
+                    ->rounded()
+                    ->size(50),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->headerActions([
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
