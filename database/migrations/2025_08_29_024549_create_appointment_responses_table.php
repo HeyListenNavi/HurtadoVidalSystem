@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('appointment_id')->constrained()->onDelete('cascade');
             $table->foreignId('question_id')->constrained('appointment_questions')->onDelete('cascade');
             $table->text('question_text_snapshot');
+            $table->text('ai_decision')->nullable();
             $table->text('user_response')->nullable();
             $table->timestamps();
         });
