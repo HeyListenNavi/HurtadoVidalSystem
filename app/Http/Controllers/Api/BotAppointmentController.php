@@ -213,7 +213,7 @@ class BotAppointmentController extends Controller
 
                 AppointmentResponse::create([
                     'appointment_id' => $appointment->id,
-                    'appointment_question_id' => $question->id,
+                    'question_id' => $question->id,
                     'user_response' => $userResponse,
                     'question_text_snapshot' => $question->question_text,
                 ]);
