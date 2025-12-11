@@ -40,12 +40,6 @@ class AppointmentQuestionResource extends Resource
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Forms\Components\Textarea::make('approval_criteria')
-                            ->label('Criterios de Aprobación (JSON)')
-                            ->helperText('Ej: {"type": "text", "min_length": 5} o {"type": "options", "values": ["si", "no"]}')
-                            ->rows(5)
-                            ->columnSpanFull(),
-
                         Forms\Components\TextInput::make('order')
                             ->label('Orden')
                             ->numeric()
