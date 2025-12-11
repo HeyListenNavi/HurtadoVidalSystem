@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('appointment_questions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('appointment_setting_id')->constrained()->onDelete('cascade');
             $table->text('question_text');
             $table->json('approval_criteria')->nullable();
             $table->unsignedInteger('order')->default(0);
