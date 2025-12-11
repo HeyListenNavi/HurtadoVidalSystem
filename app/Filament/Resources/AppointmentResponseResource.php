@@ -53,14 +53,6 @@ class AppointmentResponseResource extends Resource
                             ->rows(5)
                             ->columnSpanFull(),
                     ]),
-
-                Forms\Components\Section::make('Decisión AI')
-                    ->schema([
-                        Forms\Components\Textarea::make('ai_decision')
-                            ->label('Decisión del AI')
-                            ->rows(6)
-                            ->columnSpanFull(),
-                    ]),
             ]);
     }
 
