@@ -5,90 +5,116 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\ProductResource\Pages;
 use App\Models\Product;
 use Filament\Forms;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Form;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Support\Enums\FontWeight;
 
 class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-gift';
+    // CAMBIO 1: Ícono de navegación más clínico (Lista de procedimientos/Portapapeles)
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $modelLabel = 'Producto';
+    protected static ?string $navigationGroup = 'Administración';
+    protected static ?string $activeNavigationIcon = 'heroicon-s-clipboard-document-list';
 
-    protected static ?string $pluralModelLabel = 'Productos';
+    protected static ?string $modelLabel = 'Procedimiento';
+    protected static ?string $pluralModelLabel = 'Catálogo de Servicios';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('Información del Producto/Servicio')
+                Forms\Components\Group::make()
                     ->schema([
-                        TextInput::make('name')
-                            ->label('Nombre del Producto/Servicio')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                        Forms\Components\Section::make('Ficha Técnica')
+                            ->description('Detalles del procedimiento quirúrgico o servicio.')
+                            ->icon('heroicon-o-document-text')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nombre del Procedimiento')
+                                    ->required()
+                                    ->prefixIcon('heroicon-m-pencil-square')
+                                    ->placeholder('Ej: Rinoplastia Ultrasónica, Lipoescultura...')
+                                    ->maxLength(255),
 
-                        TextInput::make('price')
-                            ->label('Precio')
-                            ->prefix('$')
-                            ->numeric()
-                            ->required()
-                            ->minValue(0)
-                            ->columnSpan(1),
+                                Forms\Components\RichEditor::make('description')
+                                    ->label('Alcance / Incluye')
+                                    ->toolbarButtons(['bold', 'italic', 'bulletList', 'redo', 'undo'])
+                                    ->placeholder('Describa los detalles clínicos, tiempos de quirófano, etc...')
+                                    ->columnSpanFull(),
+                            ]),
+                    ])->columnSpan(['lg' => 2]),
 
-                        Textarea::make('description')
-                            ->label('Descripción')
-                            ->rows(4)
-                            ->maxLength(65535)
-                            ->columnSpanFull(),
-                    ])
-                    ->collapsible(),
-            ]);
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make('Costos')
+                            ->description('Valoración económica.')
+                            ->icon('heroicon-o-banknotes')
+                            ->schema([
+                                Forms\Components\TextInput::make('price')
+                                    ->label('Honorarios / Precio')
+                                    ->prefix('$')
+                                    ->suffix('MXN')
+                                    ->numeric()
+                                    ->required()
+                                    ->minValue(0)
+                                    ->extraInputAttributes(['class' => 'text-lg font-bold']),
+                            ]),
+
+                        Forms\Components\Section::make('Registro')
+                            ->schema([
+                                Forms\Components\Placeholder::make('created_at')
+                                    ->label('Alta en sistema')
+                                    ->content(fn (?Product $record): string => $record ? $record->created_at->format('d/m/Y') : '-'),
+
+                                Forms\Components\Placeholder::make('updated_at')
+                                    ->label('Última modificación')
+                                    ->content(fn (?Product $record): string => $record ? $record->updated_at->diffForHumans() : '-'),
+                            ])->hidden(fn (?Product $record) => $record === null),
+                    ])->columnSpan(['lg' => 1]),
+            ])
+            ->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('name', 'asc')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nombre')
+                    ->label('Procedimiento')
                     ->searchable()
                     ->sortable()
-                    ->description(fn($record) => \Illuminate\Support\Str::limit($record->description, 50)),
+                    ->weight(FontWeight::SemiBold)
+                    ->description(fn(Product $record) => \Illuminate\Support\Str::limit(strip_tags($record->description), 110))
+                    ->wrap(),
 
                 Tables\Columns\TextColumn::make('price')
-                    ->label('Precio')
-                    ->money('usd', true)
-                    ->color('success')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->since()
+                    ->label('Costo Base')
+                    ->money('usd')
+                    ->weight(FontWeight::Bold)
+                    ->color('primary')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Última actualización')
-                    ->dateTime()
+                    ->label('Actualizado')
+                    ->since()
+                    ->color('gray')
+                    ->size('xs')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([])
+            ->filters([
+                //
+            ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -96,7 +122,6 @@ class ProductResource extends Resource
                 ]),
             ]);
     }
-
 
     public static function getRelations(): array
     {
