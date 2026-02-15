@@ -6,134 +6,204 @@ use App\Filament\Resources\AppointmentResource\Pages;
 use App\Models\Appointment;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Support\Enums\FontWeight;
 
 class AppointmentResource extends Resource
 {
     protected static ?string $model = Appointment::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-calendar';
-
-    protected static ?string $navigationGroup = 'Citas';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
+    protected static ?string $navigationGroup = 'Gestión Clínica';
 
     protected static ?string $modelLabel = 'Cita';
-
-    protected static ?string $pluralModelLabel = 'Citas';
+    protected static ?string $pluralModelLabel = 'Agenda de Citas';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Información de la Cita')
+                // MAIN COLUMN: Clinical Data & Contact
+                Forms\Components\Group::make()
                     ->schema([
-                        Forms\Components\TextInput::make('chat_id')
-                            ->label('Chat ID')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\DatePicker::make('appointment_date')
-                            ->label('Fecha de la Cita')
-                            ->required(),
-                        Forms\Components\TimePicker::make('appointment_time')
-                            ->label('Hora de la Cita')
-                            ->required(),
-                        Forms\Components\Textarea::make('reason_for_visit')
-                            ->label('Motivo de la Visita')
-                            ->placeholder('Ej: Control general, revisión de síntomas...')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
+                        Forms\Components\Section::make('Ficha de la Cita')
+                            ->description('Detalles de programación y contacto del paciente.')
+                            ->icon('heroicon-o-calendar')
+                            ->schema([
+                                Forms\Components\TextInput::make('patient_name')
+                                    ->label('Nombre del Paciente')
+                                    ->prefixIcon('heroicon-m-user')
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpanFull(),
 
-                Forms\Components\Section::make('Detalles del Paciente')
-                    ->schema([
-                        Forms\Components\TextInput::make('patient_name')
-                            ->label('Nombre del Paciente')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('current_question_id')
-                            ->relationship('currentQuestion', 'question_text')
-                            ->label('Pregunta Actual')
-                            ->searchable()
-                            ->preload(),
-                    ])
-                    ->columns(2),
+                                // NEW: Phone/WhatsApp with Action Button
+                                Forms\Components\TextInput::make('chat_id')
+                                    ->label('Teléfono / WhatsApp')
+                                    ->helperText('Haga clic en el icono para abrir el chat.')
+                                    ->prefixIcon('heroicon-m-device-phone-mobile')
+                                    ->suffixAction(
+                                        Forms\Components\Actions\Action::make('openWhatsapp')
+                                            ->icon('heroicon-m-chat-bubble-left-right')
+                                            ->color('success')
+                                            ->url(fn ($state) => "https://wa.me/{$state}", true)
+                                            ->tooltip('Abrir en WhatsApp')
+                                    )
+                                    ->required()
+                                    ->maxLength(255)
+                                    ->columnSpanFull(),
 
-                Forms\Components\Section::make('Estado del Proceso')
+                                Forms\Components\Split::make([
+                                    Forms\Components\DatePicker::make('appointment_date')
+                                        ->label('Fecha Agendada')
+                                        ->native(false)
+                                        ->prefixIcon('heroicon-m-calendar-days')
+                                        ->displayFormat('d/m/Y')
+                                        ->required(),
+
+                                    Forms\Components\TimePicker::make('appointment_time')
+                                        ->label('Hora')
+                                        ->native(false)
+                                        ->prefixIcon('heroicon-m-clock')
+                                        ->seconds(false)
+                                        ->required(),
+                                ]),
+
+                                Forms\Components\Textarea::make('reason_for_visit')
+                                    ->label('Motivo de Consulta')
+                                    ->placeholder('Describa el procedimiento o control solicitado...')
+                                    ->rows(3)
+                                    ->columnSpanFull(),
+                            ]),
+                    ])->columnSpan(['lg' => 2]),
+
+                // SIDEBAR: Status Management
+                Forms\Components\Group::make()
                     ->schema([
-                        Forms\Components\Select::make('process_status')
-                            ->label('Estado del Proceso')
-                            ->options([
-                                'in_progress' => 'En Proceso',
-                                'completed' => 'Completado',
-                                'rejected' => 'Rechazado',
-                                'cancelled' => 'Cancelado',
-                            ])
-                            ->required(),
-                        Forms\Components\Textarea::make('rejection_reason')
-                            ->label('Razón de Rechazo')
-                            ->placeholder('Ej: No cumple con los requisitos')
-                            ->rows(3)
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-            ]);
+                        Forms\Components\Section::make('Gestión de Estatus')
+                            ->icon('heroicon-o-adjustments-horizontal')
+                            ->schema([
+                                Forms\Components\Select::make('process_status')
+                                    ->label('Estado Actual')
+                                    ->options([
+                                        'in_progress' => 'En Proceso',
+                                        'completed' => 'Completada',
+                                        'rejected' => 'Rechazada',
+                                        'cancelled' => 'Cancelada',
+                                    ])
+                                    ->required()
+                                    ->native(false)
+                                    ->selectablePlaceholder(false)
+                                    ->live()
+                                    ->afterStateUpdated(fn (Forms\Set $set) => $set('rejection_reason', null)),
+
+                                Forms\Components\Textarea::make('rejection_reason')
+                                    ->label('Motivo de Rechazo')
+                                    ->placeholder('Indique por qué no procede la cita...')
+                                    ->required(fn (Get $get) => $get('process_status') === 'rejected')
+                                    ->visible(fn (Get $get) => $get('process_status') === 'rejected')
+                                    ->rows(2),
+                            ]),
+
+                        Forms\Components\Section::make('Rastreo (Bot)')
+                            ->icon('heroicon-o-cpu-chip')
+                            ->collapsible()
+                            ->collapsed()
+                            ->schema([
+                                // chat_id was moved to main section
+                                Forms\Components\Select::make('current_question_id')
+                                    ->relationship('currentQuestion', 'question_text')
+                                    ->label('Última Pregunta')
+                                    ->disabled(),
+                            ]),
+                    ])->columnSpan(['lg' => 1]),
+            ])
+            ->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('appointment_date', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('chat_id')
-                    ->label('Chat ID')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('patient_name')
-                    ->label('Nombre del Paciente')
-                    ->searchable()
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('appointment_date')
                     ->label('Fecha')
-                    ->date()
-                    ->sortable(),
+                    ->date('d M, Y')
+                    ->sortable()
+                    ->icon('heroicon-m-calendar'),
 
                 Tables\Columns\TextColumn::make('appointment_time')
-                    ->label('Hora'),
+                    ->label('Hora')
+                    ->time('H:i A')
+                    ->sortable()
+                    ->icon('heroicon-m-clock'),
+
+                Tables\Columns\TextColumn::make('patient_name')
+                    ->label('Paciente')
+                    ->searchable()
+                    ->description(fn (Appointment $record) => \Illuminate\Support\Str::limit($record->reason_for_visit, 30)),
+
+                // NEW: Clickable WhatsApp Column
+                Tables\Columns\TextColumn::make('chat_id')
+                    ->label('Contacto')
+                    ->url(fn (string $state) => "https://wa.me/{$state}")
+                    ->openUrlInNewTab()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('process_status')
-                    ->badge()
                     ->label('Estado')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'in_progress' => 'En Proceso',
+                        'completed' => 'Completada',
+                        'rejected' => 'Rechazada',
+                        'cancelled' => 'Cancelada',
+                        default => $state,
+                    })
                     ->colors([
                         'info' => 'in_progress',
                         'success' => 'completed',
                         'danger' => 'rejected',
                         'warning' => 'cancelled',
-                        'gray' => 'default',
                     ])
-                    ->tooltip(fn($record) => $record->rejection_reason ? "Razón: " . $record->rejection_reason : null)
-                    ->searchable()
-                    ->sortable(),
+                    ->icon(fn (string $state): string => match ($state) {
+                        'in_progress' => 'heroicon-m-arrow-path',
+                        'completed' => 'heroicon-m-check-badge',
+                        'rejected' => 'heroicon-m-x-circle',
+                        'cancelled' => 'heroicon-m-no-symbol',
+                        default => 'heroicon-m-question-mark-circle',
+                    }),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creada')
+                    ->label('Solicitado')
                     ->since()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizada')
-                    ->dateTime()
-                    ->sortable()
+                    ->color('gray')
+                    ->size('xs')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([])
+            ->filters([
+                Tables\Filters\SelectFilter::make('process_status')
+                    ->label('Filtrar por Estado')
+                    ->options([
+                        'in_progress' => 'En Proceso',
+                        'completed' => 'Completada',
+                        'rejected' => 'Rechazada',
+                        'cancelled' => 'Cancelada',
+                    ]),
+            ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('whatsapp')
+                    ->icon('heroicon-m-chat-bubble-left-right')
+                    ->color('success')
+                    ->url(fn (Appointment $record) => "https://wa.me/{$record->chat_id}")
+                    ->openUrlInNewTab()
+                    ->label('Chat'),
+
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -141,21 +211,21 @@ class AppointmentResource extends Resource
                 ]),
             ])
             ->emptyStateActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Agendar Nueva Cita')
+                    ->icon('heroicon-m-plus'),
             ]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListAppointments::route('/'), // ¡CAMBIADO!
+            'index' => Pages\ListAppointments::route('/'),
             'create' => Pages\CreateAppointment::route('/create'),
             'edit' => Pages\EditAppointment::route('/{record}/edit'),
         ];
