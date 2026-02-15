@@ -20,7 +20,7 @@ class PatientResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $modelLabel = 'Paciente';
-    
+
     protected static ?string $pluralModelLabel = 'Pacientes';
 
     public static function form(Form $form): Form
@@ -153,9 +153,8 @@ class PatientResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //RelationManagers\PatientObservationsRelationManager::class,
-            //RelationManagers\QuotesRelationManager::class,
-
+            RelationManagers\PatientObservationsRelationManager::class,
+            RelationManagers\QuotesRelationManager::class,
         ];
     }
 
