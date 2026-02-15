@@ -39,6 +39,7 @@ class AppointmentResponseResource extends Resource
 
                 Forms\Components\Group::make()
                     ->columnSpanFull()
+                    ->columns(1)
                     ->schema([
                         Forms\Components\Section::make('Intercambio')
                             ->description('Pregunta realizada por el Bot y respuesta del paciente.')
@@ -49,13 +50,11 @@ class AppointmentResponseResource extends Resource
                                     ->options(AppointmentQuestion::all()->pluck('question_text', 'id'))
                                     ->searchable()
                                     ->required()
-                                    ->columnSpanFull()
                                     ->disabled(),
 
                                 Forms\Components\Textarea::make('user_response')
                                     ->label('Texto de la Respuesta')
                                     ->required()
-                                    ->columnSpanFull()
                                     ->extraInputAttributes(['class' => 'font-medium'])
                                     ->disabled()
                                     ->autoSize(),
@@ -89,8 +88,7 @@ class AppointmentResponseResource extends Resource
                                 ),
                             ]),
                     ]),
-            ])
-            ->columns(3);
+            ]);
     }
 
     public static function table(Table $table): Table
