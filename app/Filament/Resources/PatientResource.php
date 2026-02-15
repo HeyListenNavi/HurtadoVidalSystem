@@ -155,8 +155,7 @@ class PatientResource extends Resource
                     ->label('Paciente')
                     ->description(fn (Patient $record) => $record->email)
                     ->searchable(['first_name', 'last_name', 'email'])
-                    ->sortable(['first_name'])
-                    ->weight('bold'),
+                    ->sortable(['first_name']),
 
                 Tables\Columns\TextColumn::make('birth_date')
                     ->label('Edad')
