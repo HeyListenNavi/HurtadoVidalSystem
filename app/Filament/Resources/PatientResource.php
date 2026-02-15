@@ -5,14 +5,12 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PatientResource\Pages;
 use App\Filament\Resources\PatientResource\RelationManagers;
 use App\Models\Patient;
+use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Carbon\Carbon;
 
 class PatientResource extends Resource
 {
@@ -162,7 +160,7 @@ class PatientResource extends Resource
 
                 Tables\Columns\TextColumn::make('birth_date')
                     ->label('Edad')
-                    ->formatStateUsing(fn ($state) => Carbon::parse($state)->age . ' años')
+                    ->formatStateUsing(fn ($state) => Carbon::parse($state)->age.' años')
                     ->description(fn (Patient $record) => Carbon::parse($record->birth_date)->format('d/m/Y'))
                     ->sortable(),
 
