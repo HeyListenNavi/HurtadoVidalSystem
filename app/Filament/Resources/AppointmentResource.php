@@ -26,7 +26,6 @@ class AppointmentResource extends Resource
     {
         return $form
             ->schema([
-                // MAIN COLUMN: Clinical Data & Contact
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\Section::make('Ficha de la Cita')
@@ -40,7 +39,6 @@ class AppointmentResource extends Resource
                                     ->maxLength(255)
                                     ->columnSpanFull(),
 
-                                // NEW: Phone/WhatsApp with Action Button
                                 Forms\Components\TextInput::make('chat_id')
                                     ->label('Teléfono / WhatsApp')
                                     ->helperText('Haga clic en el icono para abrir el chat.')
@@ -80,7 +78,6 @@ class AppointmentResource extends Resource
                             ]),
                     ])->columnSpan(['lg' => 2]),
 
-                // SIDEBAR: Status Management
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\Section::make('Gestión de Estatus')
@@ -113,7 +110,6 @@ class AppointmentResource extends Resource
                             ->collapsible()
                             ->collapsed()
                             ->schema([
-                                // chat_id was moved to main section
                                 Forms\Components\Select::make('current_question_id')
                                     ->relationship('currentQuestion', 'question_text')
                                     ->label('Última Pregunta')
@@ -146,7 +142,6 @@ class AppointmentResource extends Resource
                     ->searchable()
                     ->description(fn (Appointment $record) => \Illuminate\Support\Str::limit($record->reason_for_visit, 30)),
 
-                // NEW: Clickable WhatsApp Column
                 Tables\Columns\TextColumn::make('chat_id')
                     ->label('Contacto')
                     ->url(fn (string $state) => "https://wa.me/{$state}")
