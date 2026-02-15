@@ -2,174 +2,196 @@
 
 namespace App\Filament\Resources\PatientResource\RelationManagers;
 
-use App\Models\Patient;
 use App\Models\Product;
+use App\Models\Quote;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Enums\FontFamily;
+use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
-use App\Models\Quote;
-use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Illuminate\Support\HtmlString;
 
 class QuotesRelationManager extends RelationManager
 {
     protected static string $relationship = 'quotes';
 
+    protected static ?string $title = 'Historial de Cotizaciones';
+
+    protected static ?string $modelLabel = 'Cotización';
+
+    protected static ?string $pluralModelLabel = 'Cotizaciones';
+
+    protected static ?string $icon = 'heroicon-o-currency-dollar';
+
     public function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Select::make('patient_id')
-                    ->label('Paciente')
-                    ->options(Patient::all()->pluck('full_name', 'id'))
-                    ->searchable()
-                    ->placeholder('Selecciona un paciente...')
-                    ->required()
-                    ->columnSpan('full'),
+        return $form->schema([
+            Forms\Components\Section::make()->schema([
+                Forms\Components\Grid::make(3)->schema([
+                    Forms\Components\TextInput::make('quote_number')
+                        ->label('Folio')
+                        ->default('COT-'.strtoupper(uniqid()))
+                        ->readOnly()
+                        ->prefix('#'),
 
-                Section::make('Productos y Servicios')
-                    ->schema([
-                        Repeater::make('products')
-                            ->label('Lista de Productos')
-                            ->schema([
-                                Select::make('product_id')
-                                    ->label('Producto/Servicio')
+                    Forms\Components\Select::make('status')
+                        ->label('Estado')
+                        ->options([
+                            'pending' => 'Pendiente',
+                            'paid' => 'Pagado',
+                            'cancelled' => 'Cancelado',
+                            'approved' => 'Aprobado',
+                            'rejected' => 'Rechazada',
+                        ])
+                        ->required()
+                        ->native(false)
+                        ->selectablePlaceholder(false)
+                        ->default('pending'),
+
+                    Forms\Components\DatePicker::make('valid_until')
+                        ->label('Válida hasta')
+                        ->native(false)
+                        ->default(now()->addDays(15)),
+                ]),
+            ]),
+
+            Forms\Components\Section::make('Desglose de Procedimientos')
+                ->description('Agregue los servicios médicos o quirúrgicos a cotizar.')
+                ->schema([
+                    Forms\Components\Repeater::make('quote_items')
+                        ->hiddenLabel()
+                        ->schema([
+                            Forms\Components\Grid::make(12)->schema([
+                                Forms\Components\Select::make('product_id')
+                                    ->label('Procedimiento')
                                     ->options(Product::all()->pluck('name', 'id'))
                                     ->searchable()
+                                    ->preload()
                                     ->required()
+                                    ->columnSpan(6)
                                     ->live()
-                                    ->afterStateUpdated(function ($state, $set) {
+                                    ->afterStateUpdated(function ($state, Forms\Set $set) {
                                         $product = Product::find($state);
                                         if ($product) {
                                             $set('price', $product->price);
+                                            $set('quantity', 1);
                                         }
-                                    })
-                                    ->columnSpan(2),
+                                    }),
 
-                                TextInput::make('quantity')
-                                    ->label('Cantidad')
-                                    ->numeric()
-                                    ->default(1)
-                                    ->required()
-                                    ->live()
-                                    ->columnSpan(1),
+                                Forms\Components\TextInput::make('quantity')->label('Cant.')->numeric()->default(1)->required()->columnSpan(2)->live(),
 
-                                TextInput::make('price')
-                                    ->label('Precio Unitario')
-                                    ->prefix('$')
-                                    ->numeric()
-                                    ->required()
-                                    ->live()
-                                    ->columnSpan(1),
+                                Forms\Components\TextInput::make('price')->label('Precio')->prefix('$')->numeric()->required()->columnSpan(2)->live(),
 
-                                Placeholder::make('subtotal')
+                                Forms\Components\Placeholder::make('subtotal_display')
                                     ->label('Subtotal')
-                                    ->content(function ($get) {
-                                        $quantity = $get('quantity') ?? 0;
-                                        $price = $get('price') ?? 0;
-                                        return '$' . number_format($quantity * $price, 2);
-                                    })
-                                    ->columnSpan(1),
-                            ])
-                            ->columns(5)
-                            ->columnSpan('full')
-                            ->addActionLabel('Agregar Producto')
-                            ->reorderable()
-                            ->itemLabel(
-                                fn(array $state): ?string =>
-                                $state['product_id'] ? Product::find($state['product_id'])?->name : null
-                            ),
-                    ])
-                    ->collapsible(),
+                                    ->content(function (Forms\Get $get) {
+                                        $q = (float) $get('quantity');
+                                        $p = (float) $get('price');
 
-                Section::make('Resumen')
-                    ->schema([
-                        Placeholder::make('total_placeholder')
-                            ->label('Total de la Cotización')
-                            ->content(function ($get) {
+                                        return '$'.number_format($q * $p, 2);
+                                    })
+                                    ->columnSpan(2)
+                                    ->extraAttributes(['class' => 'text-right font-bold text-gray-600 self-center']),
+                            ]),
+                        ])
+                        ->defaultItems(1)
+                        ->addActionLabel('Agregar Procedimiento')
+                        ->reorderableWithButtons()
+                        ->collapsible()
+                        ->cloneable(),
+                ]),
+
+            Forms\Components\Group::make()
+                ->columnSpanFull()
+                ->columns(1)
+                ->schema([
+                    Forms\Components\Textarea::make('notes')->label('Términos y Condiciones')->placeholder('Ej: Incluye honorarios, quirófano y primera consulta post-operatoria.')->rows(3)->autoSize(),
+
+                    Forms\Components\Section::make()->schema([
+                        Forms\Components\Placeholder::make('total_placeholder')
+                            ->hiddenLabel()
+                            ->content(function (Forms\Get $get) {
                                 $total = 0;
-                                foreach ($get('products') as $item) {
-                                    $total += ($item['quantity'] ?? 0) * ($item['price'] ?? 0);
+                                $products = $get('quote_items') ?? [];
+
+                                foreach ($products as $item) {
+                                    $q = (float) ($item['quantity'] ?? 0);
+                                    $p = (float) ($item['price'] ?? 0);
+                                    $total += $q * $p;
                                 }
+
                                 return new HtmlString(
-                                    '<span style="font-size:1.2rem; font-weight:bold; color:#16a34a;">$' .
-                                        number_format($total, 2) .
-                                        '</span>'
+                                    '
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-lg text-gray-500">Total Estimado:</span>
+                                                <span class="text-primary-600 text-3xl font-bold">$'.
+                                        number_format($total, 2).
+                                        '</span>
+                                            </div>
+                                        ',
                                 );
                             }),
-                    ])
-                    ->collapsed(false),
-            ]);
+                    ]),
+                ]),
+        ]);
     }
 
     public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('quote_number')
             ->defaultSort('created_at', 'desc')
             ->columns([
-                Tables\Columns\TextColumn::make('quote_number')
-                    ->label('No. de Cotización')
-                    ->copyable()
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('quote_number')->label('Folio')->fontFamily(FontFamily::Mono)->color('gray')->searchable(),
 
-                Tables\Columns\TextColumn::make('patient.full_name')
-                    ->label('Paciente')
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('total_amount')
-                    ->label('Monto Total')
-                    ->money('usd', true)
-                    ->color(fn($state) => $state > 0 ? 'success' : 'gray')
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Fecha')->date('d M Y')->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
-                    ->label('Estado')
                     ->badge()
-                    ->color(fn($state) => match ($state) {
-                        'pendiente' => 'warning',
-                        'pagado' => 'success',
-                        'cancelado' => 'danger',
-                        default => 'gray',
-                    })
-                    ->sortable(),
+                    ->label('Estado')
+                    ->formatStateUsing(
+                        fn (string $state): string => match ($state) {
+                            'pending' => 'Pendiente',
+                            'paid' => 'Pagado',
+                            'cancelled' => 'Cancelado',
+                            'approved' => 'Aprobado',
+                            'rejected' => 'Rechazada',
+                            default => $state,
+                        },
+                    )
+                    ->colors([
+                        'warning' => 'pending',
+                        'success' => 'paid',
+                        'danger' => 'cancelled',
+                        'danger' => 'rejected',
+                        'info' => 'approved',
+                    ])
+                    ->icon(
+                        fn (string $state): string => match ($state) {
+                            'paid' => 'heroicon-m-check-badge',
+                            'cancelled' => 'heroicon-m-x-circle',
+                            'rejected' => 'heroicon-m-x-circle',
+                            'pending' => 'heroicon-m-clock',
+                            'approved' => 'heroicon-m-document-check',
+                            default => 'heroicon-m-document',
+                        },
+                    ),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Fecha')
-                    ->dateTime()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('total_amount')->label('Total')->money('usd')->weight(FontWeight::Bold)->color('success')->alignEnd(),
             ])
-            ->filters([])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\ActionGroup::make([
-                    Action::make("downloadPDF")
-                        ->url(
-                            fn(Quote $quote) =>
-                            route("quote.generate.pdf", ["quote" => $quote])
-                        )
-                        ->openUrlInNewTab()
-                        ->label("PDF"),
-
-                    Action::make("generateHTML")
-                        ->url(
-                            fn(Quote $quote) =>
-                            route("quote.generate.html", ["quote" => $quote])
-                        )
-                        ->openUrlInNewTab()
-                        ->label("Online"),
-                ])->label('Más'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')->options([
+                    'pending' => 'Pendiente',
+                    'paid' => 'Pagado',
+                    'cancelled' => 'Cancelado',
+                    'approved' => 'Aprobado',
+                    'rejected' => 'Rechazada',
                 ]),
-            ]);
+            ])
+            ->headerActions([Tables\Actions\CreateAction::make()->label('Nueva Cotización')->modalHeading('¿Confirmar Cotización?')->modalDescription('Verifique que los montos y procedimientos sean correctos. Se generará un folio único.')->modalIcon('heroicon-o-check-circle')->slideOver()->stickyModalHeader()])
+            ->actions([Tables\Actions\Action::make('downloadPDF')->label('PDF')->icon('heroicon-o-arrow-down-tray')->url(fn (Quote $record) => route('quote.generate.pdf', $record))->openUrlInNewTab(), Tables\Actions\Action::make('viewOnline')->label('Ver Online')->icon('heroicon-o-globe-alt')->url(fn (Quote $record) => route('quote.generate.html', $record))->openUrlInNewTab()])
+            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 }
