@@ -32,7 +32,6 @@ class PatientResource extends Resource
     {
         return $form
             ->schema([
-                // LEFT COLUMN: Administrative & Identity (2/3 width)
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\Section::make('Ficha de Identificación')
@@ -112,7 +111,6 @@ class PatientResource extends Resource
                     ])
                     ->columnSpan(['lg' => 2]),
 
-                // RIGHT COLUMN: Clinical Profile (1/3 width) - "The Sidebar"
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\Section::make('Perfil Clínico')
@@ -162,7 +160,6 @@ class PatientResource extends Resource
                     ->sortable(['first_name'])
                     ->weight('bold'),
 
-                // UX Improvement: Show Age, not just date
                 Tables\Columns\TextColumn::make('birth_date')
                     ->label('Edad')
                     ->formatStateUsing(fn ($state) => Carbon::parse($state)->age . ' años')
