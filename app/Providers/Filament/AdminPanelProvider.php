@@ -5,11 +5,9 @@ namespace App\Providers\Filament;
 use App\Filament\Widgets\AppointmentsByStatusWidget;
 use App\Filament\Widgets\AppointmentsPerDayWidget;
 use App\Filament\Widgets\EstimatedRevenuePerMonthWidget;
-use App\Filament\Widgets\MonthlyPatientsChart;
 use App\Filament\Widgets\NewPatientsPerMonthWidget;
 use App\Filament\Widgets\PatientsList;
 use App\Filament\Widgets\PatientsOverview;
-use App\Filament\Widgets\TotalPatientsChart;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -17,7 +15,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
+use Filament\Support\Colors\Color; // Importante para la paleta nativa
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -36,8 +34,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => '#916F52',
+                'primary' => Color::Emerald,
             ])
+            ->font('Inter')
+            ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

@@ -4,33 +4,48 @@ namespace App\Filament\Widgets;
 
 use App\Models\Appointment;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentsByStatusWidget extends ChartWidget
 {
-    protected static ?string $heading = 'Citas por Estado';
-
-    protected static ?string $maxHeight = '240px';
-
+    protected static ?string $heading = 'Distribución de Citas';
+    protected static ?string $description = 'Resumen de estados del flujo actual.';
     protected static ?int $sort = 4;
 
     protected function getData(): array
     {
-        $statuses = ['in_progress', 'completed', 'rejected', 'cancelled'];
-        $labels = ['En Progreso', 'Completadas', 'Rechazadas', 'Canceladas'];
-        $colors = ['#916F52', '#A98D79', '#C1AA99', '#D9C6B8'];
+        $data = Appointment::select('process_status', DB::raw('count(*) as total'))
+            ->groupBy('process_status')
+            ->pluck('total', 'process_status')
+            ->toArray();
 
+        $config = [
+            'completed'   => ['label' => 'Completadas', 'color' => '#059669'],
+            'in_progress' => ['label' => 'En Proceso',  'color' => '#10b981'],
+            'cancelled'   => ['label' => 'Canceladas',  'color' => '#6ee7b7'],
+            'rejected'    => ['label' => 'Rechazadas',  'color' => '#d1fae5'],
+        ];
+
+        $labels = [];
         $counts = [];
-        foreach ($statuses as $status) {
-            $counts[] = Appointment::where('process_status', $status)->count();
+        $colors = [];
+
+        foreach ($config as $key => $settings) {
+            $labels[] = $settings['label'];
+            $counts[] = $data[$key] ?? 0;
+            $colors[] = $settings['color'];
         }
 
         return [
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'Appointment Status',
+                    'label' => 'Citas',
                     'data' => $counts,
                     'backgroundColor' => $colors,
+                    'borderColor' => '#ffffff',
+                    'borderWidth' => 2,
+                    'hoverOffset' => 4
                 ],
             ],
         ];
@@ -39,5 +54,32 @@ class AppointmentsByStatusWidget extends ChartWidget
     protected function getType(): string
     {
         return 'doughnut';
+    }
+
+    protected function getOptions(): array
+    {
+        return [
+            'plugins' => [
+                'legend' => [
+                    'display' => true,
+                    'position' => 'bottom',
+                    'labels' => [
+                        'usePointStyle' => true,
+                        'padding' => 15,
+                        'font' => [
+                            'size' => 10,
+                        ],
+                        'color' => '#000',
+                    ],
+                ],
+                'tooltip' => [
+                    'enabled' => true,
+                    'bodyFont' => [
+                        'size' => 10,
+                    ],
+                ],
+            ],
+            'cutout' => '75%',
+        ];
     }
 }
