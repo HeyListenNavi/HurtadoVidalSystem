@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('appointment_settings', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->text('rejection_reason')->nullable();
+            $table->longText('rejection_reason')->nullable();
+            $table->longText("agent_configuration")->nullable();
+            $table->longText("rag_content")->nullable("rag_content");
             $table->timestamps();
         });
     }
