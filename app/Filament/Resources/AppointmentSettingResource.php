@@ -30,20 +30,80 @@ class AppointmentSettingResource extends Resource
                         Forms\Components\Section::make('Identidad del Flujo')
                             ->description('Nombre interno para identificar este conjunto de reglas.')
                             ->icon('heroicon-o-finger-print')
-                            ->schema([Forms\Components\TextInput::make('name')->label('Nombre del Flujo')->placeholder('Ej: Flujo Estándar 2025, Campaña Botox...')->required()->unique(ignoreRecord: true)->maxLength(255)->prefixIcon('heroicon-m-tag')]),
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nombre del Flujo')
+                                    ->placeholder('Ej: Flujo Estándar 2025, Campaña Botox...')
+                                    ->required()
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255)
+                                    ->prefixIcon('heroicon-m-tag'),
+                            ]),
                     ])
                     ->columnSpan(['lg' => 1]),
 
                 Forms\Components\Group::make()
                     ->schema([
+
+                        Forms\Components\Section::make('Configuración del Agente')
+                            ->description('Instrucciones, personalidad, reglas de comportamiento y tono del agente.')
+                            ->icon('heroicon-o-cpu-chip')
+                            ->schema([
+                                Forms\Components\RichEditor::make('agent_configuration')
+                                    ->label('Configuración del agente')
+                                    ->placeholder('Ej: Actúa como un asesor médico profesional, usa un tono empático...')
+                                    ->toolbarButtons([
+                                        'bold',
+                                        'italic',
+                                        'underline',
+                                        'bulletList',
+                                        'orderedList',
+                                        'h2',
+                                        'h3',
+                                        'link',
+                                    ])
+                                    ->columnSpanFull()
+                                    ->required(),
+                            ]),
+
+                        Forms\Components\Section::make('RAG - Memoria e Información de Productos')
+                            ->description('Base de conocimiento del agente: productos, precios, protocolos, FAQs.')
+                            ->icon('heroicon-o-circle-stack')
+                            ->schema([
+                                Forms\Components\RichEditor::make('rag_content')
+                                    ->label('Contenido RAG')
+                                    ->placeholder('Ej: Producto: Botox Premium\nPrecio: $4,500\nDuración: 6 meses...')
+                                    ->toolbarButtons([
+                                        'bold',
+                                        'italic',
+                                        'underline',
+                                        'bulletList',
+                                        'orderedList',
+                                        'h2',
+                                        'h3',
+                                        'link',
+                                    ])
+                                    ->columnSpanFull(),
+                            ]),
+
                         Forms\Components\Section::make('Respuestas Automáticas (Fallback)')
                             ->description('Mensajes que el bot enviará en situaciones de rechazo.')
                             ->icon('heroicon-o-exclamation-triangle')
-                            ->schema([Forms\Components\Textarea::make('rejection_reason')->label('Mensaje de Rechazo por Defecto')->helperText('Este mensaje se enviará si el paciente no cumple los criterios y no hay una razón específica.')->placeholder('Lo sentimos, en este momento no podemos agendar su cita debido a...')->rows(4)->required()->columnSpanFull()->autoSize()]),
+                            ->schema([
+                                Forms\Components\Textarea::make('rejection_reason')
+                                    ->label('Mensaje de Rechazo por Defecto')
+                                    ->helperText('Este mensaje se enviará si el paciente no cumple los criterios y no hay una razón específica.')
+                                    ->placeholder('Lo sentimos, en este momento no podemos agendar su cita debido a...')
+                                    ->rows(4)
+                                    ->required()
+                                    ->columnSpanFull()
+                                    ->autoSize(),
+                            ]),
                     ])
                     ->columnSpan(['lg' => 2]),
             ])
-            ->columns(3);
+            ->columns(1);
+
     }
 
     public static function table(Table $table): Table
