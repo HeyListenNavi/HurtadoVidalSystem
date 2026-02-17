@@ -9,6 +9,7 @@ use Filament\Forms;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Log;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Http;
 
 class EditAppointment extends EditRecord
 {
@@ -23,32 +24,41 @@ class EditAppointment extends EditRecord
                 ->label('Avisar Cita')
                 ->icon('heroicon-o-bell-alert')
                 ->color('info')
-                ->form([
-                    Forms\Components\TextInput::make('doctor_name')
-                        ->label('Nombre del Doctor')
-                        ->required()
-                        ->placeholder('Dr. Ejemplo'),
-                    Forms\Components\TextInput::make('assistant_name')
-                        ->label('Nombre de la Asistente')
-                        ->required()
-                        ->placeholder('Asistente Ejemplo'),
-                ])
                 ->action(function (Appointment $record, array $data) {
-                    $apiPayload = [
-                        'paciente' => $record->patient_name,
-                        'telefono' => $record->chat_id,
-                        'fecha_cita' => $record->appointment_date,
-                        'hora_cita' => $record->appointment_time,
-                        'doctor_asignado' => $data['doctor_name'],
-                        'asistente_asignada' => $data['assistant_name'],
-                    ];
+                    $apiKey = env('RETELL_API_KEY');
+                    $agentId = 'agent_cbb6275c270ab16a3f6036de49';
+                    $fromNumber = '+18456066291';
 
-                    Log::info('LLAMADA API AVISO CITA:', $apiPayload);
+                    $toNumber = $record->chat_id;
 
-                    Notification::make()
-                        ->title('Aviso enviado correctamente')
-                        ->success()
-                        ->send();
+                    try {
+                        $response = Http::withToken($apiKey)
+                            ->post('https://api.retellai.com/v2/create-phone-call', [
+                                'from_number' => $fromNumber,
+                                'to_number'   => '+52' . $toNumber,
+                                'override_agent_id' => $agentId,
+                            ]);
+
+                        if ($response->successful()) {
+                            $callData = $response->json();
+                            Log::info('Llamada Retell Iniciada:', $callData);
+
+                            Notification::make()
+                                ->title('Llamada iniciada correctamente')
+                                ->body('Call ID: ' . $callData['call_id'])
+                                ->success()
+                                ->send();
+
+                            return;
+                        }
+                        Notification::make()
+                            ->title('Error al iniciar la llamada')
+                            ->danger()
+                            ->send();
+
+                    } catch (\Exception $e) {
+                        Notification::make()->title('Error de conexión')->danger()->send();
+                    }
                 }),
         ];
     }
