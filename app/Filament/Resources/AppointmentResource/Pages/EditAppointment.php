@@ -35,7 +35,7 @@ class EditAppointment extends EditRecord
                         $response = Http::withToken($apiKey)
                             ->post('https://api.retellai.com/v2/create-phone-call', [
                                 'from_number' => $fromNumber,
-                                'to_number'   => '+52' . $toNumber,
+                                'to_number'   => $toNumber,
                                 'override_agent_id' => $agentId,
                             ]);
 
