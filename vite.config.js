@@ -10,4 +10,15 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+        server: {
+        host: '0.0.0.0',
+        hmr: {
+            host: 'navi.local',
+            port: 5173,
+        },
+        cors: true,
+        watch: {
+            ignored: ['**/storage/framework/views/**'],
+        },
+    },
 });
