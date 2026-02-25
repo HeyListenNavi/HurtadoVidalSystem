@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\QuoteResource\Pages;
+use App\Filament\Resources\QuoteResource\RelationManagers\PaymentsRelationManager;
 use App\Models\Patient;
 use App\Models\Product;
 use App\Models\Quote;
@@ -194,13 +195,48 @@ class QuoteResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_amount')->label('Total')->money('usd')->weight(FontWeight::Bold)->color('success')->alignEnd(),
             ])
-            ->actions([Tables\Actions\EditAction::make()->iconButton(), Tables\Actions\Action::make('downloadPDF')->label('PDF')->icon('heroicon-o-arrow-down-tray')->url(fn(Quote $record) => route('quote.generate.pdf', $record))->openUrlInNewTab(), Tables\Actions\Action::make('viewOnline')->label('Online')->icon('heroicon-o-globe-alt')->url(fn(Quote $record) => route('quote.generate.html', $record))->openUrlInNewTab()])
+            ->actions([
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\Action::make('downloadPDF')->label('PDF')->icon('heroicon-o-arrow-down-tray')->url(fn(Quote $record) => route('quote.generate.pdf', $record))->openUrlInNewTab(),
+                Tables\Actions\Action::make('viewOnline')->label('Online')->icon('heroicon-o-globe-alt')->url(fn(Quote $record) => route('quote.generate.html', $record))->openUrlInNewTab(),
+                Tables\Actions\Action::make('addPayment')
+                    ->label('Abonar')
+                    ->icon('heroicon-s-credit-card')
+                    ->color('success')
+                    ->button()
+                    ->hidden(fn(Quote $record) => $record->status === 'paid')
+                    ->form([
+                        Forms\Components\Placeholder::make('balance')
+                            ->label('Saldo Pendiente')
+                            ->content(fn(Quote $record) => '$' . number_format($record->remaining_balance, 2)),
+                        Forms\Components\TextInput::make('amount')
+                            ->label('Monto a Pagar')
+                            ->numeric()
+                            ->required()
+                            ->default(fn(Quote $record) => $record->remaining_balance)
+                            ->maxValue(fn(Quote $record) => $record->remaining_balance),
+                    ])
+                    ->action(function (Quote $record, array $data) {
+                        $record->payments()->create([
+                            'amount' => $data['amount'],
+                            'stripe_link' => 'https://checkout.stripe.com/pay/demo_' . \Illuminate\Support\Str::random(12),
+                            'status' => 'completed',
+                        ]);
+
+                        // Fill up logic: if full amount is reached, update status
+                        if ($record->payments()->sum('amount') >= $record->total_amount) {
+                            $record->update(['status' => 'paid']);
+                        }
+                    }),
+            ])
             ->bulkActions([Tables\Actions\BulkActionGroup::make([Tables\Actions\DeleteBulkAction::make()])]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            PaymentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

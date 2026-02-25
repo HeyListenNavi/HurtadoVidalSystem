@@ -46,4 +46,15 @@ class Quote extends Model
         return $this->belongsToMany(Product::class, 'quote_product')
                     ->withPivot('price', 'quantity');
     }
+
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    // Critical for the UI:   How much is left?
+    public function getRemainingBalanceAttribute(): float
+    {
+        return $this->total_amount - $this->payments()->sum('amount');
+    }
 }
