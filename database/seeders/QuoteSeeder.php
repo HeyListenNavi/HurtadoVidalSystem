@@ -11,11 +11,14 @@ class QuoteSeeder extends Seeder
 {
     public function run(): void
     {
-        $patients = Patient::all();
-        foreach ($patients as $patient) {
-            Quote::factory(2)->create([
-                'patient_id' => $patient->id,
-            ]);
-        }
+        Patient::all()->each(function ($patient) {
+            Quote::factory()
+                ->count(2)
+                ->create([
+                    'patient_id' => $patient->id,
+                ]);
+        });
     }
 }
+
+

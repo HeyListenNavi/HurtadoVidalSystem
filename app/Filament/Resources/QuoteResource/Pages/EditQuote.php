@@ -18,30 +18,48 @@ class EditQuote extends EditRecord
         ];
     }
 
-    /**
-     * Sobreescribimos la lógica de guardado para la edición.
-     */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $productsData = $data['products'] ?? [];
-        unset($data['products']);
-        
-        // Actualizamos los datos principales de la cotización
+        // Usar el nuevo nombre
+        $productsData = $data['quote_products_data'] ?? [];
+        unset($data['quote_products_data']);
+
         $record->update($data);
 
-        // Preparamos los datos para la tabla pivote
         $syncData = collect($productsData)->mapWithKeys(function ($item, $key) {
-            return [$item['product_id'] => [
-                'price'    => $item['price'],
-                'quantity' => $item['quantity'],
-                'order'    => $key + 1, // Usamos el índice del array para el orden
-            ]];
+            return [
+                $item['product_id'] => [
+                    'quantity' => $item['quantity'],
+                    'price'    => $item['price'],
+                    'order'    => $key + 1,
+                ],
+            ];
         })->toArray();
-            
-        // Sincronizamos la relación. Esto eliminará las relaciones antiguas
-        // y las reemplazará con las nuevas del formulario.
+
         $record->products()->sync($syncData);
 
         return $record;
     }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        // Llenar el Repeater usando el nuevo nombre
+        $data['quote_products_data'] = $this->record
+            ->products()
+            ->withPivot(['quantity', 'price', 'order'])
+            ->orderByPivot('order')
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'product_id' => $product->id,
+                    'quantity'   => $product->pivot->quantity,
+                    'price'      => $product->pivot->price,
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        return $data;
+    }
+
 }

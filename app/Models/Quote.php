@@ -41,8 +41,6 @@ class Quote extends Model
      */
     public function products(): BelongsToMany
     {
-        // El problema está aquí. Filament/Laravel busca 'product_quote' por defecto.
-        // Debes especificar el nombre correcto de la tabla pivote.
         return $this->belongsToMany(Product::class, 'quote_product')
                     ->withPivot('price', 'quantity');
     }
