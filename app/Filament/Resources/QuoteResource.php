@@ -72,7 +72,7 @@ class QuoteResource extends Resource
             Forms\Components\Section::make('Desglose de Procedimientos')
                 ->description('Agregue los servicios médicos o quirúrgicos a cotizar.')
                 ->schema([
-                    Forms\Components\Repeater::make('quote_items')
+                    Forms\Components\Repeater::make('quote_products')
                         ->hiddenLabel()
                         ->schema([
                             Forms\Components\Grid::make(12)->schema([

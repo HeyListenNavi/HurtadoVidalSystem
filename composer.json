@@ -13,6 +13,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laraveldaily/laravel-invoices": "4.1",
+        "relaticle/flowforge": "^1.0",
         "saade/filament-fullcalendar": "^3.0"
     },
     "require-dev": {
