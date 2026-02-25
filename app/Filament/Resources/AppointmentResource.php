@@ -123,6 +123,7 @@ class AppointmentResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->poll("5s")
             ->defaultSort('appointment_date', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('appointment_date')
