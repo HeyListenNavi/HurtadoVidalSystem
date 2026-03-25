@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Conversation;
 use App\Models\Appointment;
 use App\Models\AppointmentQuestion;
 use App\Models\AppointmentResponse;
+use App\Models\Conversation;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class BotAppointmentController extends Controller
 {
@@ -79,7 +80,7 @@ class BotAppointmentController extends Controller
         if (!$appointment) {
             return response()->json(['success' => false, 'message' => 'No se encontró una cita en proceso o el proceso ha terminado.'], 404);
         }
-        
+
         $currentStep = $appointment->current_step;
 
         switch ($currentStep) {
@@ -148,11 +149,11 @@ class BotAppointmentController extends Controller
                     'status' => 'process_completed',
                     'message' => 'El proceso de agendamiento ya ha finalizado.'
                 ]);
-            
+
             default:
                 return response()->json(['success' => false, 'message' => 'Estado de conversación no válido.'], 400);
         }
-        
+
         return response()->json([
             'status' => 'next_question',
             'next_question_text' => $nextQuestionText,
@@ -168,17 +169,17 @@ class BotAppointmentController extends Controller
         $request->validate([
             'user_response' => 'required|string',
         ]);
-        
+
         $userResponse = $request->input('user_response');
 
         $appointment = Appointment::where('chat_id', $chatId)
             ->where('process_status', 'in_progress')
             ->first();
-        
+
         if (!$appointment) {
             return response()->json(['success' => false, 'message' => 'Cita no encontrada o proceso terminado.'], 404);
         }
-        
+
         $currentStep = $appointment->current_step;
 
         // Lógica para guardar la respuesta según el paso de la máquina.
@@ -208,7 +209,7 @@ class BotAppointmentController extends Controller
                 // Lógica para guardar respuestas de preguntas dinámicas.
                 $question = AppointmentQuestion::find($appointment->current_question_id);
                 if (!$question) {
-                     return response()->json(['success' => false, 'message' => 'Pregunta dinámica no encontrada.'], 404);
+                    return response()->json(['success' => false, 'message' => 'Pregunta dinámica no encontrada.'], 404);
                 }
 
                 AppointmentResponse::create([
@@ -218,7 +219,7 @@ class BotAppointmentController extends Controller
                     'question_text_snapshot' => $question->question_text,
                 ]);
                 break;
-            
+
             case 'completed_process':
                 return response()->json(['success' => false, 'message' => 'El proceso de agendamiento ya ha finalizado.'], 200);
 
@@ -227,7 +228,7 @@ class BotAppointmentController extends Controller
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Respuesta guardada y proceso avanzado.',
             'appointment' => $appointment
         ]);
@@ -259,5 +260,66 @@ class BotAppointmentController extends Controller
         $appointment->update($request->all());
 
         return response()->json(['success' => true, 'appointment' => $appointment]);
+    }
+
+    public function checkAvailability(Request $request)
+    {
+        $validated = $request->validate([
+            'date' => 'required|date_format:Y-m-d',
+            'time' => 'required|date_format:H:i',
+        ]);
+
+        $requestedStart = Carbon::parse($validated['date'] . ' ' . $validated['time']);
+
+        $limitBack = (clone $requestedStart)->subHour()->format('H:i:s');
+        $limitForward = (clone $requestedStart)->addHour()->format('H:i:s');
+
+        $overlap = Appointment::where('appointment_date', $validated['date'])
+            ->whereIn('process_status', ['in_progress', 'completed'])
+            ->whereTime('appointment_time', '>', $limitBack)
+            ->whereTime('appointment_time', '<', $limitForward)
+            ->exists();
+
+        return response()->json([
+            'available' => !$overlap,
+            'message' => $overlap ? 'El horario ya está ocupado.' : 'Horario disponible.'
+        ]);
+    }
+
+    public function rescheduleAppointment(Request $request, $chatId)
+    {
+        $validated = $request->validate([
+            'new_date' => 'required|date_format:Y-m-d',
+            'new_time' => 'required|date_format:H:i',
+        ]);
+
+        $appointment = Appointment::where('chat_id', $chatId)
+            ->whereIn('process_status', ['in_progress', 'completed'])
+            ->latest()
+            ->first();
+
+        if (!$appointment) {
+            return response()->json(['success' => false, 'message' => 'No se encontró una cita activa para reagendar.'], 404);
+        }
+
+        $isAvailable = $this->checkAvailability(new Request([
+            'date' => $validated['new_date'],
+            'time' => $validated['new_time']
+        ]))->getData()->available;
+
+        if (!$isAvailable) {
+            return response()->json(['success' => false, 'message' => 'El nuevo horario no está disponible.'], 422);
+        }
+
+        $appointment->update([
+                'appointment_date' => $validated['new_date'],
+                'appointment_time' => $validated['new_time'],
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cita reagendada con éxito.',
+            'appointment' => $appointment
+        ]);
     }
 }

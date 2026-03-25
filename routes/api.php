@@ -22,26 +22,32 @@ Route::prefix('bot')->group(function () {
     Route::get('conversations/{chatId}', [BotConversationController::class, 'getOrCreateConversation']);
     Route::put('conversations/{conversationId}', [BotConversationController::class, 'updateConversation']);
 
-    
+
 
     Route::prefix('appointments')->group(function () {
         // Inicia el proceso de agendamiento.
         Route::post('start', [BotAppointmentController::class, 'startAppointment']);
-        
+
         // Obtiene la siguiente pregunta en el flujo de agendamiento.
         Route::get('{chatId}/next-question', [BotAppointmentController::class, 'getNextQuestion']);
-        
+
         // Procesa la respuesta del usuario y la almacena.
         Route::post('{chatId}/submit-answer', [BotAppointmentController::class, 'submitAnswer']);
-        
+
         // Evalúa si la etapa actual puede ser aprobada y el proceso puede continuar.
         Route::post('{chatId}/appointment-approval', [BotAppointmentController::class, 'handleAppointmentApproval']);
-        
+
         // Obtiene el estado actual de la cita para el chat especificado.
         Route::get('{chatId}/status', [BotAppointmentController::class, 'getAppointmentStatus']);
 
         // Permite actualizar manualmente la información de la cita.
         Route::put('{appointmentId}/update-manually', [BotAppointmentController::class, 'updateManually']);
+
+        // Requires: date, time
+        Route::get('check-availability', [BotAppointmentController::class, 'checkAvailability']);
+
+        // Requires: chat id with an existing appointment
+        Route::post('{chatId}/reschedule', [BotAppointmentController::class, 'rescheduleAppointment']);
     });
 
 });
