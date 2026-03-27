@@ -244,7 +244,7 @@ class BotAppointmentController extends Controller
             return response()->json(['success' => false, 'message' => 'Cita no encontrada.'], 404);
         }
 
-        return response()->json(['success' => true, 'status' => $appointment->process_status]);
+        return response()->json(['success' => true, 'status' => $appointment]);
     }
 
     /**
