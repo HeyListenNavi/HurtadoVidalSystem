@@ -36,6 +36,11 @@ class QuoteResource extends Resource
     protected static ?string $modelLabel = 'Cotización';
     protected static ?string $pluralModelLabel = 'Cotizaciones';
 
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -98,7 +103,7 @@ class QuoteResource extends Resource
                     // ... dentro de tu Section 'Desglose de Procedimientos' ...
                     Repeater::make('quote_products_data')
                         ->label('Productos')
-                        ->live() 
+                        ->live()
                         ->schema([
                             Select::make('product_id')
                                 ->label('Producto')
@@ -106,14 +111,14 @@ class QuoteResource extends Resource
                                 ->searchable()
                                 ->required()
                                 // 1. live() sin onBlur aquí para que el cambio de precio sea instantáneo al seleccionar
-                                ->live() 
+                                ->live()
                                 // 2. Aquí interceptamos el valor seleccionado para buscar el precio
                                 ->afterStateUpdated(function ($state, Forms\Set $set) {
                                     if (!blank($state)) {
                                         $product = Product::find($state);
                                         if ($product) {
                                             // Llenamos el campo 'price' de esta misma fila
-                                            $set('price', $product->price); 
+                                            $set('price', $product->price);
                                         }
                                     }
                                 }),
@@ -123,13 +128,13 @@ class QuoteResource extends Resource
                                 ->required()
                                 ->default(1)
                                 // 3. Cambiamos debounce por onBlur
-                                ->live(onBlur: true), 
+                                ->live(onBlur: true),
 
                             TextInput::make('price')
                                 ->numeric()
                                 ->required()
                                 // 4. Cambiamos debounce por onBlur. Si el médico edita el precio, se recalcula al salir del campo.
-                                ->live(onBlur: true), 
+                                ->live(onBlur: true),
                         ])
                         ->columns(3),
 
@@ -149,7 +154,7 @@ class QuoteResource extends Resource
                     ->content(function (Forms\Get $get) {
                         $total = 0;
                         // 3. Actualizamos el nombre aquí también para que calcule bien
-                        $products = $get('quote_products_data') ?? []; 
+                        $products = $get('quote_products_data') ?? [];
 
                         foreach ($products as $item) {
                             $q = (float) ($item['quantity'] ?? 0);
