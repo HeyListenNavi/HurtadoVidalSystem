@@ -123,7 +123,9 @@ class PatientResource extends Resource
 
     public static function getRelations(): array
     {
-        return [RelationManagers\PatientObservationsRelationManager::class, RelationManagers\QuotesRelationManager::class];
+        return [
+            RelationManagers\PatientObservationsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
