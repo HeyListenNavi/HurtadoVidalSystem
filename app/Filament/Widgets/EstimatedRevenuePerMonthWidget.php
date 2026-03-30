@@ -14,6 +14,11 @@ class EstimatedRevenuePerMonthWidget extends ChartWidget
     protected static ?string $description = 'Suma de presupuestos aprobados.';
     protected static ?int $sort = 3;
 
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     public ?string $filter = '365';
 
     protected function getFilters(): ?array
