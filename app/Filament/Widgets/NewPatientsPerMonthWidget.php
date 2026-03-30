@@ -12,7 +12,7 @@ class NewPatientsPerMonthWidget extends ChartWidget
 {
     protected static ?string $heading = 'Crecimiento de Pacientes';
     protected static ?string $description = 'Nuevos registros en el sistema.';
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 3;
 
     public ?string $filter = '365';
 
