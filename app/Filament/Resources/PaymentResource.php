@@ -25,6 +25,11 @@ class PaymentResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Pagos';
 
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
