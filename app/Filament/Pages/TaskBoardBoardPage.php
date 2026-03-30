@@ -12,6 +12,11 @@ class TaskBoardBoardPage extends KanbanBoardPage
     protected static ?string $navigationLabel = 'Tablero de Tareas';
     protected static ?string $title = 'Tareas';
 
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
