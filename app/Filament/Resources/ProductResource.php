@@ -24,6 +24,11 @@ class ProductResource extends Resource
     protected static ?string $modelLabel = 'Procedimiento';
     protected static ?string $pluralModelLabel = 'Catálogo de Servicios';
 
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
