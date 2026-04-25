@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'n8n' => [
+        'rag_webhook_url' => env('N8N_RAG_URL'),
+    ],
+
 ];

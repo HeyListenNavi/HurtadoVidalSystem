@@ -13,6 +13,8 @@ class AppointmentSetting extends Model
     protected $fillable = [
         'name',
         'rejection_reason',
+        'agent_configuration',
+        'rag_content',
     ];
 
     public function questions(): HasMany
